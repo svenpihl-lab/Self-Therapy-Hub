@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inner Work">
+<link rel="manifest" href="manifest.json">
+<title>Inner Work</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --surface2: #22223a;
+  --surface3: #2a2a45;
+  --border: rgba(255,255,255,0.08);
+  --text: #e8e6f0;
+  --text-muted: #8a8aa0;
+  --text-dim: #5a5a75;
+  --accent: #a78bfa;
+  --accent2: #f472b6;
+  --accent3: #34d399;
+  --accent4: #fb923c;
+  --accent5: #60a5fa;
+  --danger: #f87171;
+  --happy: #fbbf24;
+  --surprised: #a78bfa;
+  --bad: #94a3b8;
+  --fearful: #60a5fa;
+  --angry: #f87171;
+  --disgusted: #34d399;
+  --sad: #818cf8;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --transition: all 0.2s ease;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LOCK SCREEN ── */
+#lockScreen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  flex-direction: column;
+  gap: 32px;
+}
+#lockScreen h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.5rem;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+#lockScreen p {
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.9rem;
+}
+.lock-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  width: min(380px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.lock-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: var(--transition);
+}
+.lock-input:focus { border-color: var(--accent); }
+.lock-error { color: var(--danger); font-size: 0.85rem; text-align: center; min-height: 20px; }
+
+/* ── LAYOUT ── */
+#app { display: none; height: 100dvh; flex-direction: column; overflow: hidden; }
+#app.visible { display: flex; }
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.topbar-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.2rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 10;
+}
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn svg { width: 20px; height: 20px; }
+.nav-btn span { margin-top: 1px; }
+
+/* ── PANELS ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.section-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #0f0f1a; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface3); }
+.btn-ghost { background: transparent; color: var(--text-muted); padding: 8px; }
+.btn-ghost:hover { color: var(--text); background: var(--surface2); border-radius: var(--radius-sm); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+.btn-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── INPUTS ── */
+.input, .textarea, .select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+  transition: var(--transition);
+}
+.input:focus, .textarea:focus, .select:focus { border-color: var(--accent); }
+.textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.select option { background: var(--surface2); }
+
+/* ── FORM GROUPS ── */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; display: block; }
+
+/* ── TAGS ── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+.tag.selected { border-color: currentColor; }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── LOG ENTRIES ── */
+.log-entry {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--accent);
+}
+.log-entry-date {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.log-entry-content { font-size: 0.88rem; color: var(--text); }
+
+/* ── TOGGLE ── */
+.toggle-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.toggle-item {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+.toggle-item.active { background: var(--accent); color: #0f0f1a; border-color: var(--accent); }
+
+/* ══════════════════════════════════════
+   PANEL 1: HOME / DASHBOARD
+══════════════════════════════════════ */
+.home-greeting {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.8rem;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.home-date { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tool-card:hover { background: var(--surface2); border-color: var(--accent); transform: translateY(-1px); }
+.tool-card-icon { font-size: 1.6rem; }
+.tool-card-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.tool-card-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
+
+/* ══════════════════════════════════════
+   PANEL 2: TIMER
+══════════════════════════════════════ */
+.timer-display {
+  text-align: center;
+  padding: 32px 0;
+}
+.timer-time {
+  font-family: 'DM Serif Display', serif;
+  font-size: 5rem;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1;
+}
+.timer-phase {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+.timer-prompt {
+  margin-top: 8px;
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+  min-height: 48px;
+  padding: 0 16px;
+  line-height: 1.5;
+}
+.timer-progress {
+  height: 3px;
+  background: var(--surface3);
+  border-radius: 2px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+.timer-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+.timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+.timer-phase-dots { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+.phase-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--surface3);
+  transition: var(--transition);
+}
+.phase-dot.active { background: var(--accent); transform: scale(1.3); }
+.phase-dot.done { background: var(--accent3); }
+
+/* ══════════════════════════════════════
+   PANEL 3: FEELINGS WHEEL
+══════════════════════════════════════ */
+.core-emotions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.core-btn {
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: var(--transition);
+  background: var(--surface2);
+  color: var(--text-muted);
+}
+.core-btn.selected { border-color: currentColor; color: currentColor; }
+.sub-emotions-container { margin-top: 16px; }
+.sub-group { margin-bottom: 14px; }
+.sub-group-title { font-size: 0.78rem; font-weight: 600; margin-bottom: 8px; }
+.sub-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sub-tag {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+.sub-tag.selected { border-color: currentColor; }
+.feeling-log-form { margin-top: 16px; }
+.when-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.when-tag {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+.when-tag.selected { background: var(--surface3); color: var(--text); border-color: var(--text-muted); }
+.selected-summary {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  min-height: 40px;
+}
+
+/* ══════════════════════════════════════
+   PANEL 4: CLOSENESS CIRCLE
+══════════════════════════════════════ */
+.circle-diagram {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto 20px;
+  aspect-ratio: 1;
+}
+.circle-svg { width: 100%; height: 100%; }
+.person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  transition: var(--transition);
+  margin: 4px;
+}
+.person-chip.selected { background: var(--surface3); border-color: var(--accent); }
+.movement-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; }
+.movement-btn {
+  padding: 8px;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+.movement-btn.selected { background: var(--accent); color: #0f0f1a; border-color: var(--accent); }
+.zone-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+.zone-secret { background: rgba(167,139,250,0.15); color: var(--accent); }
+.zone-private { background: rgba(96,165,250,0.15); color: var(--accent5); }
+.zone-public { background: rgba(52,211,153,0.15); color: var(--accent3); }
+
+/* ══════════════════════════════════════
+   PANEL 5: ABC WORKSHEET
+══════════════════════════════════════ */
+.abc-steps { counter-reset: abc; }
+.abc-step {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+.abc-step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.abc-letter {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0f0f1a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.abc-title { font-weight: 600; font-size: 0.9rem; }
+.abc-hint { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; }
+
+/* ══════════════════════════════════════
+   PANEL 6: GRIEF & REGULATION
+══════════════════════════════════════ */
+.technique-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.technique-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.technique-card:hover { border-color: var(--accent3); }
+.technique-card.active { border-color: var(--accent3); background: rgba(52,211,153,0.08); }
+.technique-icon { font-size: 1.4rem; margin-bottom: 4px; }
+.technique-name { font-size: 0.82rem; font-weight: 600; }
+.technique-content {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  border-left: 3px solid var(--accent3);
+}
+.technique-content strong { color: var(--text); }
+
+/* ══════════════════════════════════════
+   PANEL 7: RITUALS
+══════════════════════════════════════ */
+.ritual-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ritual-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.ritual-check.done { background: var(--accent3); border-color: var(--accent3); }
+.ritual-label { flex: 1; font-size: 0.9rem; }
+.ritual-label a { color: var(--accent5); text-decoration: none; }
+.ritual-label a:hover { text-decoration: underline; }
+.ritual-delete { color: var(--text-dim); font-size: 0.8rem; cursor: pointer; padding: 4px; }
+
+/* ══════════════════════════════════════
+   PANEL 8: SESSIONS
+══════════════════════════════════════ */
+.session-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.session-card:hover { border-color: var(--accent); }
+.session-card.missed { border-left: 3px solid var(--danger); opacity: 0.8; }
+.session-card.completed { border-left: 3px solid var(--accent3); }
+.session-card.upcoming { border-left: 3px solid var(--text-dim); }
+.session-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+.session-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem;
+  color: var(--text);
+}
+.session-notes {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+/* ══════════════════════════════════════
+   EXPORT
+══════════════════════════════════════ */
+.export-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.export-check {
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+  color: #0f0f1a;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.export-check.checked { background: var(--accent); border-color: var(--accent); }
+.export-label { flex: 1; font-size: 0.9rem; }
+.export-output {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+/* ══════════════════════════════════════
+   SYNC STATUS
+══════════════════════════════════════ */
+.sync-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent3);
+  flex-shrink: 0;
+}
+.sync-dot.syncing { background: var(--accent4); animation: pulse 1s infinite; }
+.sync-dot.error { background: var(--danger); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ══════════════════════════════════════
+   MODALS
+══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 16px 16px 12px 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-close { cursor: pointer; color: var(--text-muted); font-size: 1.3rem; }
+
+/* ══════════════════════════════════════
+   GOOGLE DRIVE CONNECT
+══════════════════════════════════════ */
+.drive-connect {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.drive-status { font-size: 0.82rem; color: var(--text-muted); margin-top: 6px; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE / MISC
+══════════════════════════════════════ */
+@media (max-width: 380px) {
+  .core-emotions { grid-template-columns: repeat(4, 1fr); }
+  .timer-time { font-size: 4rem; }
+}
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.text-muted { color: var(--text-muted); }
+.text-sm { font-size: 0.82rem; }
+.text-xs { font-size: 0.75rem; }
+.italic { font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div>
+    <h1>Inner Work</h1>
+    <p style="text-align:center;color:var(--text-muted);margin-top:8px">Your private therapeutic space</p>
+  </div>
+  <div class="lock-card">
+    <input type="password" class="lock-input" id="passwordInput" placeholder="Enter password" autocomplete="current-password">
+    <button class="btn btn-primary btn-full" onclick="checkPassword()">Enter</button>
+    <div class="lock-error" id="lockError"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-title">Inner Work</div>
+    <div class="topbar-actions">
+      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+      <button class="btn btn-ghost" onclick="openExport()" title="Export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      </button>
+      <button class="btn btn-ghost" onclick="openSettings()" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- ── HOME PANEL ── -->
+    <div class="panel active" id="panel-home">
+      <div class="home-greeting" id="homeGreeting">Good morning</div>
+      <div class="home-date" id="homeDate"></div>
+
+      <div class="card" id="sessionReminderCard" style="border-color:var(--accent);display:none">
+        <div class="flex-between">
+          <div>
+            <div class="section-label">Session Tracker</div>
+            <div style="font-size:0.9rem" id="sessionsRemaining"></div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="navTo('sessions')">View</button>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:8px">Tools</div>
+      <div class="tool-grid">
+        <div class="tool-card" onclick="navTo('timer')">
+          <div class="tool-card-icon">⏱</div>
+          <div class="tool-card-name">Session Timer</div>
+          <div class="tool-card-desc">20 min with shifting prompts</div>
+        </div>
+        <div class="tool-card" onclick="navTo('feelings')">
+          <div class="tool-card-icon">🌈</div>
+          <div class="tool-card-name">Feelings Wheel</div>
+          <div class="tool-card-desc">Label & log emotions</div>
+        </div>
+        <div class="tool-card" onclick="navTo('circle')">
+          <div class="tool-card-icon">⭕</div>
+          <div class="tool-card-name">Closeness Circle</div>
+          <div class="tool-card-desc">Relationship mapping</div>
+        </div>
+        <div class="tool-card" onclick="navTo('abc')">
+          <div class="tool-card-icon">🔍</div>
+          <div class="tool-card-name">ABC Worksheet</div>
+          <div class="tool-card-desc">A→E thought analysis</div>
+        </div>
+        <div class="tool-card" onclick="navTo('grief')">
+          <div class="tool-card-icon">🌿</div>
+          <div class="tool-card-name">Grief & Regulation</div>
+          <div class="tool-card-desc">Six grounding tools</div>
+        </div>
+        <div class="tool-card" onclick="navTo('rituals')">
+          <div class="tool-card-icon">✨</div>
+          <div class="tool-card-name">Rituals</div>
+          <div class="tool-card-desc">Checklist & resources</div>
+        </div>
+        <div class="tool-card" onclick="navTo('sessions')">
+          <div class="tool-card-icon">📋</div>
+          <div class="tool-card-name">Sessions</div>
+          <div class="tool-card-desc">5 remaining + notes</div>
+        </div>
+        <div class="tool-card" onclick="openExport()">
+          <div class="tool-card-icon">📤</div>
+          <div class="tool-card-name">Export</div>
+          <div class="tool-card-desc">Share with therapist</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TIMER PANEL ── -->
+    <div class="panel" id="panel-timer">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:0">Session Timer</div>
+      <div class="timer-display">
+        <div class="timer-time" id="timerDisplay">20:00</div>
+        <div class="timer-phase" id="timerPhase">Ready to begin</div>
+        <div class="timer-prompt" id="timerPrompt">Find a comfortable position. Take three deep breaths before you start.</div>
+        <div class="timer-progress"><div class="timer-progress-bar" id="timerProgressBar" style="width:100%"></div></div>
+        <div class="timer-phase-dots" id="timerPhaseDots">
+          <div class="phase-dot" id="dot0"></div>
+          <div class="phase-dot" id="dot1"></div>
+          <div class="phase-dot" id="dot2"></div>
+          <div class="phase-dot" id="dot3"></div>
+        </div>
+        <div class="timer-controls">
+          <button class="btn btn-primary" id="timerStartBtn" onclick="startTimer()">Start</button>
+          <button class="btn btn-secondary" id="timerPauseBtn" onclick="pauseTimer()" style="display:none">Pause</button>
+          <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
+        </div>
+      </div>
+
+      <div class="card" id="timerLogCard">
+        <div class="card-title">After Listening Back</div>
+        <div class="form-group">
+          <label class="form-label">What did you notice while listening back?</label>
+          <textarea class="textarea" id="timerNotice" placeholder="Patterns, surprises, things that landed differently..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Body language observations</label>
+          <textarea class="textarea" id="timerBody" placeholder="Posture, gestures, facial expressions, tension..."></textarea>
+        </div>
+        <div class="ritual-item" style="border:none;padding:8px 0">
+          <div class="ritual-check" id="videoCheck" onclick="toggleVideoCheck()"></div>
+          <span class="ritual-label">Video recorded</span>
+        </div>
+        <button class="btn btn-primary btn-sm mt-8" onclick="saveTimerLog()">Save Notes</button>
+        <hr class="divider">
+        <div class="section-label">Previous Logs</div>
+        <div id="timerLogs"></div>
+      </div>
+    </div>
+
+    <!-- ── FEELINGS PANEL ── -->
+    <div class="panel" id="panel-feelings">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem">Feelings Wheel</div>
+
+      <div class="card">
+        <div class="section-label">Core Emotion</div>
+        <div class="core-emotions" id="coreEmotions"></div>
+        <div class="sub-emotions-container" id="subEmotions"></div>
+        <hr class="divider">
+        <div class="section-label">When did you feel this?</div>
+        <div class="when-tags">
+          <div class="when-tag" onclick="toggleWhen('while-talking')" id="when-while-talking">While talking</div>
+          <div class="when-tag" onclick="toggleWhen('listening-back')" id="when-listening-back">Listening back</div>
+          <div class="when-tag" onclick="toggleWhen('watching-video')" id="when-watching-video">Watching video</div>
+        </div>
+        <div class="selected-summary" id="selectedSummary">No emotions selected yet.</div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="textarea" id="feelingNotes" placeholder="What was happening? What triggered this?"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveFeelingLog()">Log Feelings</button>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Feelings Log</div>
+        <div id="feelingsLog"></div>
+      </div>
+    </div>
+
+    <!-- ── CIRCLE PANEL ── -->
+    <div class="panel" id="panel-circle">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem">Closeness Circle</div>
+
+      <div class="card">
+        <div class="circle-diagram">
+          <svg class="circle-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" id="circleSVG">
+            <!-- Concentric circles -->
+            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+            <circle cx="150" cy="150" r="95" fill="none" stroke="rgba(167,139,250,0.25)" stroke-width="1.5"/>
+            <circle cx="150" cy="150" r="60" fill="none" stroke="rgba(167,139,250,0.35)" stroke-width="1.5"/>
+            <circle cx="150" cy="150" r="28" fill="rgba(167,139,250,0.1)" stroke="rgba(167,139,250,0.5)" stroke-width="1.5"/>
+            <!-- Labels -->
+            <text x="14" y="154" fill="rgba(52,211,153,0.7)" font-size="8" font-family="DM Sans">PUBLIC</text>
+            <text x="60" y="60" fill="rgba(96,165,250,0.7)" font-size="8" font-family="DM Sans">PRIVATE</text>
+            <text x="98" y="98" fill="rgba(167,139,250,0.7)" font-size="8" font-family="DM Sans">SECRET</text>
+            <!-- Center name -->
+            <text x="150" y="155" fill="white" font-size="9" font-family="DM Serif Display" text-anchor="middle">Sven</text>
+            <!-- People dots rendered by JS -->
+            <g id="circlePeople"></g>
+          </svg>
+        </div>
+
+        <div id="peopleList"></div>
+
+        <hr class="divider">
+        <div class="section-label">Log a Reflection</div>
+        <div class="form-group">
+          <label class="form-label">Select person(s)</label>
+          <div id="personSelector"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Movement</label>
+          <div class="movement-grid" id="movementGrid">
+            <div class="movement-btn" onclick="selectMovement('closer')" id="mv-closer" title="Closer">←</div>
+            <div class="movement-btn" onclick="selectMovement('away')" id="mv-away" title="Away">→</div>
+            <div class="movement-btn" onclick="selectMovement('both')" id="mv-both" title="Both">↔</div>
+            <div class="movement-btn" onclick="selectMovement('stable')" id="mv-stable" title="Stable">—</div>
+            <div class="movement-btn" onclick="selectMovement('exited')" id="mv-exited" title="Exited">✕</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reflection</label>
+          <textarea class="textarea" id="circleNotes" placeholder="What are you noticing? What surprised you?"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveCircleLog()">Save Reflection</button>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Reflection Prompts</div>
+        <div style="font-size:0.85rem;color:var(--text-muted);line-height:1.8">
+          <p>• What feelings do you notice when you look at your circle?</p>
+          <p>• Were there any surprises?</p>
+          <p>• How has your circle changed in the last year?</p>
+          <p>• What changes would you like to see going forward?</p>
+          <p>• What prevents you from sharing more of your secret self?</p>
+          <p>• What did you learn from doing this exercise?</p>
+        </div>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Reflections Log</div>
+        <div id="circleLog"></div>
+      </div>
+    </div>
+
+    <!-- ── ABC PANEL ── -->
+    <div class="panel" id="panel-abc">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem">ABC Worksheet</div>
+      <div class="card">
+        <div class="abc-steps">
+          <div class="abc-step">
+            <div class="abc-step-header">
+              <div class="abc-letter">A</div>
+              <div class="abc-title">Activating Event</div>
+            </div>
+            <div class="abc-hint">What happened? The situation or trigger.</div>
+            <textarea class="textarea" id="abc-A" placeholder="Describe the event objectively..."></textarea>
+          </div>
+          <div class="abc-step">
+            <div class="abc-step-header">
+              <div class="abc-letter">B</div>
+              <div class="abc-title">Belief</div>
+            </div>
+            <div class="abc-hint">What were you telling yourself? The thought or belief.</div>
+            <textarea class="textarea" id="abc-B" placeholder="What was your automatic thought?..."></textarea>
+          </div>
+          <div class="abc-step">
+            <div class="abc-step-header">
+              <div class="abc-letter">C</div>
+              <div class="abc-title">Consequence</div>
+            </div>
+            <div class="abc-hint">How did you feel and what did you do?</div>
+            <textarea class="textarea" id="abc-C" placeholder="Emotional and behavioral consequences..."></textarea>
+          </div>
+          <div class="abc-step" style="border-left-color:var(--accent3)">
+            <div class="abc-step-header">
+              <div class="abc-letter" style="background:var(--accent3)">D</div>
+              <div class="abc-title">Disputation</div>
+            </div>
+            <div class="abc-hint">Challenge the belief. Is it true? Is there evidence?</div>
+            <textarea class="textarea" id="abc-D" placeholder="What's another way to see this?..."></textarea>
+          </div>
+          <div class="abc-step" style="border-left-color:var(--accent5)">
+            <div class="abc-step-header">
+              <div class="abc-letter" style="background:var(--accent5)">E</div>
+              <div class="abc-title">Effective New Belief</div>
+            </div>
+            <div class="abc-hint">A more balanced, realistic belief you can hold.</div>
+            <textarea class="textarea" id="abc-E" placeholder="A healthier perspective..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full mt-12" onclick="saveABC()">Save Entry</button>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Previous Entries</div>
+        <div id="abcLog"></div>
+      </div>
+    </div>
+
+    <!-- ── GRIEF PANEL ── -->
+    <div class="panel" id="panel-grief">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem">Grief & Regulation</div>
+
+      <div class="card">
+        <div class="section-label">Techniques</div>
+        <div class="technique-grid" id="techniqueGrid"></div>
+        <div class="technique-content" id="techniqueContent" style="display:none"></div>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Grief Journal</div>
+        <div class="form-group">
+          <textarea class="textarea" id="griefJournal" placeholder="Write freely. This is your space..." style="min-height:120px"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveGriefEntry()">Save Entry</button>
+        <hr class="divider">
+        <div id="griefLog"></div>
+      </div>
+    </div>
+
+    <!-- ── RITUALS PANEL ── -->
+    <div class="panel" id="panel-rituals">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem">Rituals & Checklist</div>
+
+      <div class="card">
+        <div class="section-label">Pre-Session Rituals</div>
+        <div id="ritualsList"></div>
+        <div class="flex gap-8 mt-12">
+          <input type="text" class="input" id="newRitualInput" placeholder="Add a custom ritual..." style="flex:1">
+          <button class="btn btn-secondary btn-sm" onclick="addRitual()">Add</button>
+        </div>
+        <button class="btn btn-ghost btn-sm mt-8" style="color:var(--text-dim)" onclick="resetRituals()">Reset all</button>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Resources</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <a href="https://www.elephantjournal.com" target="_blank" class="btn btn-secondary btn-sm">🐘 Elephant Journal</a>
+          <a href="https://goodmenproject.com" target="_blank" class="btn btn-secondary btn-sm">🌱 Good Men Project</a>
+          <a href="https://adultchildren.org" target="_blank" class="btn btn-secondary btn-sm">📚 ACA / Adult Children</a>
+          <a href="https://innerstate.life" target="_blank" class="btn btn-secondary btn-sm">🔵 innerstate.life</a>
+        </div>
+      </div>
+
+      <div class="card mt-12">
+        <div class="card-title">Weekly Session Scheduler</div>
+        <div class="form-group">
+          <label class="form-label">Scheduled day / time</label>
+          <input type="text" class="input" id="scheduleDay" placeholder="e.g. Sundays at 10am">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Intention for this week</label>
+          <textarea class="textarea" id="weekIntention" placeholder="What do you want to bring to this session?"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSchedule()">Save</button>
+        <div id="scheduleDisplay" class="mt-8 text-sm text-muted"></div>
+      </div>
+    </div>
+
+    <!-- ── SESSIONS PANEL ── -->
+    <div class="panel" id="panel-sessions">
+      <div class="card-title" style="font-family:'DM Serif Display',serif;font-size:1.3rem">Session Tracker</div>
+      <div id="sessionsList"></div>
+      <button class="btn btn-secondary btn-sm btn-full mt-8" onclick="addSession()">+ Add Session</button>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="navTo('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav-timer" onclick="navTo('timer')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+      <span>Timer</span>
+    </button>
+    <button class="nav-btn" id="nav-feelings" onclick="navTo('feelings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <span>Feelings</span>
+    </button>
+    <button class="nav-btn" id="nav-abc" onclick="navTo('abc')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>ABC</span>
+    </button>
+    <button class="nav-btn" id="nav-more" onclick="navTo('more')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+      <span>More</span>
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL: Settings -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">
+      Settings
+      <span class="modal-close" onclick="closeModal('settingsModal')">✕</span>
+    </div>
+    <div class="section-label">Google Drive Sync</div>
+    <div class="drive-connect">
+      <div id="driveStatusText">Not connected</div>
+      <div class="drive-status" id="driveStatusDetail">Connect to sync your data across devices</div>
+      <button class="btn btn-secondary btn-sm mt-8" id="driveConnectBtn" onclick="connectDrive()">Connect Google Drive</button>
+      <button class="btn btn-ghost btn-sm mt-8" id="driveSignOutBtn" onclick="signOutDrive()" style="display:none;color:var(--danger)">Sign out</button>
+    </div>
+    <hr class="divider">
+    <div class="section-label">Password</div>
+    <div class="form-group">
+      <input type="password" class="input" id="newPasswordInput" placeholder="New password">
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="changePassword()">Change Password</button>
+    <hr class="divider">
+    <div class="section-label">Data</div>
+    <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="clearAllData()">Clear all local data</button>
+  </div>
+</div>
+
+<!-- MODAL: Export -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-title">
+      Export for Therapist
+      <span class="modal-close" onclick="closeModal('exportModal')">✕</span>
+    </div>
+    <p class="text-sm text-muted" style="margin-bottom:16px">Select what to include. Plain text — no app access needed.</p>
+    <div id="exportOptions"></div>
+    <button class="btn btn-primary btn-full mt-12" onclick="generateExport()">Generate Export</button>
+    <div id="exportOutput" style="display:none">
+      <div class="export-output" id="exportText"></div>
+      <button class="btn btn-secondary btn-full mt-8" onclick="copyExport()">Copy to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Session Edit -->
+<div class="modal-overlay" id="sessionModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="sessionModalTitle">Session</span>
+      <span class="modal-close" onclick="closeModal('sessionModal')">✕</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" class="input" id="sessionDate">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="select" id="sessionStatus">
+        <option value="upcoming">Upcoming</option>
+        <option value="completed">Completed</option>
+        <option value="missed">Missed</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Missed reason (if applicable)</label>
+      <input type="text" class="input" id="sessionMissedReason" placeholder="e.g. Lost cell service — not my fault">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes — what we built or decided</label>
+      <textarea class="textarea" id="sessionNotes" style="min-height:100px" placeholder="Topics covered, tools built, decisions made..."></textarea>
+    </div>
+    <button class="btn btn-primary btn-full mt-8" onclick="saveSession()">Save</button>
+  </div>
+</div>
+
+<!-- GOOGLE API -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+const APP_VERSION = '1.0.0';
+const DEFAULT_PASSWORD_HASH = 'therapy2024'; // User should change in settings
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const FILE_NAME = 'inner-work-data.json';
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let state = {
+  sessions: [
+    { id: 1, num: 1, date: '', status: 'missed', missedReason: 'Lost cell service — not my fault', notes: '' },
+    { id: 2, num: 2, date: '', status: 'upcoming', missedReason: '', notes: '' },
+    { id: 3, num: 3, date: '', status: 'upcoming', missedReason: '', notes: '' },
+    { id: 4, num: 4, date: '', status: 'upcoming', missedReason: '', notes: '' },
+    { id: 5, num: 5, date: '', status: 'upcoming', missedReason: '', notes: '' },
+  ],
+  timerLogs: [],
+  feelingsLogs: [],
+  circleLogs: [],
+  abcEntries: [],
+  griefEntries: [],
+  rituals: [
+    { id: 1, label: 'Read Elephant Journal', url: 'https://www.elephantjournal.com', done: false },
+    { id: 2, label: 'Read Good Men Project', url: 'https://goodmenproject.com', done: false },
+    { id: 3, label: 'ACA materials', url: 'https://adultchildren.org', done: false },
+    { id: 4, label: 'Find a quiet space', done: false },
+    { id: 5, label: 'Water & journal nearby', done: false },
+    { id: 6, label: 'Three deep breaths', done: false },
+  ],
+  schedule: { day: '', intention: '' },
+  driveFileId: null,
+  password: DEFAULT_PASSWORD_HASH,
+  people: [
+    { initials: 'GP', name: 'Phil Gawthorp', zone: 'secret', movement: 'both' },
+    { initials: 'PD', name: 'Peter Dana', zone: 'secret', movement: 'both' },
+    { initials: 'SB', name: 'Susan Bailey', zone: 'secret', movement: 'closer' },
+    { initials: 'AM', name: 'Ann Mione', zone: 'secret', movement: 'stable' },
+    { initials: 'AS', name: 'Alex/Sam', zone: 'private', movement: 'both' },
+    { initials: 'SA', name: 'Sam/Alex', zone: 'private', movement: 'both' },
+    { initials: 'BB', name: 'Bobbi Bennett', zone: 'public', movement: 'both' },
+    { initials: 'PM', name: 'Paul Meyer', zone: 'public', movement: 'both' },
+    { initials: 'RB', name: 'Bobbi/RB', zone: 'public', movement: 'closer' },
+    { initials: 'HR', name: 'Hillary Barret Reed', zone: 'public', movement: 'away' },
+  ]
+};
+
+let currentSessionEdit = null;
+let driveAccessToken = null;
+let syncTimeout = null;
+
+// ══════════════════════════════════════════════════════
+// FEELINGS WHEEL DATA
+// ══════════════════════════════════════════════════════
+const FEELINGS = {
+  Happy: {
+    color: '#fbbf24',
+    sub: ['Playful','Content','Interested','Proud','Accepted','Powerful','Peaceful','Trusting','Optimistic',
+          'Joyful','Free','Cheeky','Aroused','Energetic','Eager','Awe','Inquisitive','Curious',
+          'Successful','Confident','Respected','Valued','Courageous','Creative','Loving',
+          'Thankful','Sensitive','Intimate','Hopeful','Inspired']
+  },
+  Surprised: {
+    color: '#a78bfa',
+    sub: ['Excited','Amazed','Confused','Startled','Shocked','Dismayed','Disillusioned',
+          'Perplexed','Astonished']
+  },
+  Bad: {
+    color: '#94a3b8',
+    sub: ['Bored','Busy','Rushed','Pressured','Apathetic','Overwhelmed','Out of control','Sleepy','Uncreative','Tired','Stressed']
+  },
+  Fearful: {
+    color: '#60a5fa',
+    sub: ['Scared','Anxious','Insecure','Weak','Rejected','Threatened','Helpless',
+          'Frightened','Overwhelmed','Worried','Inadequate','Inferior','Worthless',
+          'Insignificant','Excluded','Persecuted','Nervous','Exposed']
+  },
+  Angry: {
+    color: '#f87171',
+    sub: ['Let down','Humiliated','Bitter','Mad','Aggressive','Frustrated','Distant',
+          'Critical','Betrayed','Resentful','Disrespected','Ridiculed','Indignant',
+          'Violated','Furious','Jealous','Provoked','Hostile','Infuriated','Annoyed',
+          'Withdrawn','Numb','Disapproving','Disappointed']
+  },
+  Disgusted: {
+    color: '#34d399',
+    sub: ['Disapproving','Disappointed','Awful','Repelled','Hurt','Depressed','Guilty',
+          'Despair','Vulnerable','Lonely','Sceptical','Dismissive','Judgmental',
+          'Embarrassed','Appalled','Revolted','Nauseated','Detestable','Horrified',
+          'Hesitant','Horrified']
+  },
+  Sad: {
+    color: '#818cf8',
+    sub: ['Lonely','Vulnerable','Despair','Guilty','Depressed','Hurt','Disappointed',
+          'Inferior','Empty','Remorseful','Ashamed','Powerless','Grief','Fragile',
+          'Victimised','Abandoned','Isolated','Embarrassed']
+  }
+};
+
+// Selected feelings state
+let selectedCore = {};
+let selectedSubs = {};
+let selectedWhen = [];
+
+// ══════════════════════════════════════════════════════
+// LOCK / AUTH
+// ══════════════════════════════════════════════════════
+function checkPassword() {
+  const input = document.getElementById('passwordInput').value;
+  const err = document.getElementById('lockError');
+  if (input === state.password) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    initApp();
+  } else {
+    err.textContent = 'Incorrect password. Try again.';
+    document.getElementById('passwordInput').value = '';
+  }
+}
+
+document.getElementById('passwordInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+function changePassword() {
+  const newPw = document.getElementById('newPasswordInput').value.trim();
+  if (!newPw) return;
+  state.password = newPw;
+  saveLocal();
+  document.getElementById('newPasswordInput').value = '';
+  alert('Password changed.');
+}
+
+// ══════════════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════════════
+function saveLocal() {
+  try {
+    localStorage.setItem('innerwork_state', JSON.stringify(state));
+  } catch(e) {}
+  scheduleDriveSync();
+}
+
+function loadLocal() {
+  try {
+    const saved = localStorage.getItem('innerwork_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Merge carefully to preserve defaults
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+}
+
+function scheduleDriveSync() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(syncToDrive, 3000);
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
+}
+
+// ══════════════════════════════════════════════════════
+// GOOGLE DRIVE
+// ══════════════════════════════════════════════════════
+const DRIVE_CLIENT_ID = '__GOOGLE_CLIENT_ID__'; // Replaced during setup
+
+function connectDrive() {
+  if (DRIVE_CLIENT_ID === '__GOOGLE_CLIENT_ID__') {
+    alert('Google Drive sync requires setup. See the setup guide for instructions on adding your Google Client ID.');
+    return;
+  }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: DRIVE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: (response) => {
+      if (response.access_token) {
+        driveAccessToken = response.access_token;
+        localStorage.setItem('innerwork_drive_token', response.access_token);
+        updateDriveUI(true);
+        syncToDrive();
+      }
+    }
+  });
+  client.requestAccessToken();
+}
+
+function signOutDrive() {
+  driveAccessToken = null;
+  localStorage.removeItem('innerwork_drive_token');
+  localStorage.removeItem('innerwork_drive_file_id');
+  state.driveFileId = null;
+  updateDriveUI(false);
+}
+
+function updateDriveUI(connected) {
+  document.getElementById('driveStatusText').textContent = connected ? '✓ Connected to Google Drive' : 'Not connected';
+  document.getElementById('driveStatusDetail').textContent = connected
+    ? 'Data syncs automatically after changes'
+    : 'Connect to sync your data across devices';
+  document.getElementById('driveConnectBtn').style.display = connected ? 'none' : '';
+  document.getElementById('driveSignOutBtn').style.display = connected ? '' : 'none';
+}
+
+async function syncToDrive() {
+  if (!driveAccessToken) return;
+  setSyncStatus('syncing');
+  try {
+    const data = JSON.stringify(state);
+    const fileId = state.driveFileId || localStorage.getItem('innerwork_drive_file_id');
+
+    if (fileId) {
+      // Update existing file
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${driveAccessToken}`, 'Content-Type': 'application/json' },
+        body: data
+      });
+    } else {
+      // Create new file in appDataFolder
+      const meta = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${driveAccessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] })
+      }).then(r => r.json());
+
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${meta.id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${driveAccessToken}`, 'Content-Type': 'application/json' },
+        body: data
+      });
+      state.driveFileId = meta.id;
+      localStorage.setItem('innerwork_drive_file_id', meta.id);
+    }
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('error');
+  }
+}
+
+async function loadFromDrive() {
+  if (!driveAccessToken) return;
+  try {
+    const fileId = state.driveFileId || localStorage.getItem('innerwork_drive_file_id');
+    if (!fileId) return;
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: { 'Authorization': `Bearer ${driveAccessToken}` }
+    });
+    if (res.ok) {
+      const remote = await res.json();
+      state = { ...state, ...remote };
+      saveLocal();
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
+let currentPanel = 'home';
+const NAV_PANELS = ['home', 'timer', 'feelings', 'abc'];
+
+function navTo(panel) {
+  // Hide all panels
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const targetPanel = document.getElementById(`panel-${panel}`);
+  if (targetPanel) {
+    targetPanel.classList.add('active');
+    currentPanel = panel;
+  }
+
+  // Activate nav button
+  const navBtn = document.getElementById(`nav-${panel}`);
+  if (navBtn) navBtn.classList.add('active');
+  else document.getElementById('nav-more').classList.add('active');
+
+  window.scrollTo(0, 0);
+  document.querySelector('.main-content').scrollTop = 0;
+}
+
+// ══════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════
+const TIMER_TOTAL = 20 * 60;
+const TIMER_PROMPTS = [
+  { phase: 'Phase 1 (0–5 min)', prompt: 'Just begin. No agenda. Let whatever wants to come, come.' },
+  { phase: 'Phase 2 (5–10 min)', prompt: 'Notice what you\'re avoiding. What\'s sitting just off to the side?' },
+  { phase: 'Phase 3 (10–15 min)', prompt: 'What does your body know that your mind hasn\'t caught up to yet?' },
+  { phase: 'Phase 4 (15–20 min)', prompt: 'What would you want to remember from today? What wants to land?' },
+];
+let timerInterval = null;
+let timerSeconds = TIMER_TOTAL;
+let timerRunning = false;
+let videoChecked = false;
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const elapsed = TIMER_TOTAL - timerSeconds;
+  const phase = Math.min(3, Math.floor(elapsed / 300));
+
+  document.getElementById('timerPhase').textContent = TIMER_PROMPTS[phase].phase;
+  document.getElementById('timerPrompt').textContent = TIMER_PROMPTS[phase].prompt;
+
+  const pct = (timerSeconds / TIMER_TOTAL) * 100;
+  document.getElementById('timerProgressBar').style.width = pct + '%';
+
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    dot.className = 'phase-dot' + (i === phase ? ' active' : i < phase ? ' done' : '');
+  }
+}
+
+function startTimer() {
+  timerRunning = true;
+  document.getElementById('timerStartBtn').style.display = 'none';
+  document.getElementById('timerPauseBtn').style.display = '';
+  timerInterval = setInterval(() => {
+    if (timerSeconds > 0) {
+      timerSeconds--;
+      updateTimerDisplay();
+    } else {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      document.getElementById('timerPhase').textContent = 'Session complete';
+      document.getElementById('timerPrompt').textContent = 'Take a moment. When ready, listen back.';
+      document.getElementById('timerPauseBtn').style.display = 'none';
+      document.getElementById('timerStartBtn').style.display = '';
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('timerStartBtn').style.display = '';
+  document.getElementById('timerPauseBtn').style.display = 'none';
+  document.getElementById('timerStartBtn').textContent = 'Resume';
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = TIMER_TOTAL;
+  updateTimerDisplay();
+  document.getElementById('timerStartBtn').style.display = '';
+  document.getElementById('timerStartBtn').textContent = 'Start';
+  document.getElementById('timerPauseBtn').style.display = 'none';
+  document.getElementById('timerPhase').textContent = 'Ready to begin';
+  document.getElementById('timerPrompt').textContent = 'Find a comfortable position. Take three deep breaths before you start.';
+}
+
+function toggleVideoCheck() {
+  videoChecked = !videoChecked;
+  const el = document.getElementById('videoCheck');
+  el.className = 'ritual-check' + (videoChecked ? ' done' : '');
+  el.textContent = videoChecked ? '✓' : '';
+}
+
+function saveTimerLog() {
+  const notice = document.getElementById('timerNotice').value.trim();
+  const body = document.getElementById('timerBody').value.trim();
+  if (!notice && !body) return;
+  state.timerLogs.unshift({
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}),
+    notice, body, videoRecorded: videoChecked
+  });
+  document.getElementById('timerNotice').value = '';
+  document.getElementById('timerBody').value = '';
+  videoChecked = false;
+  document.getElementById('videoCheck').className = 'ritual-check';
+  document.getElementById('videoCheck').textContent = '';
+  saveLocal();
+  renderTimerLogs();
+}
+
+function renderTimerLogs() {
+  const el = document.getElementById('timerLogs');
+  if (!state.timerLogs.length) { el.innerHTML = '<p class="text-sm text-muted italic">No logs yet.</p>'; return; }
+  el.innerHTML = state.timerLogs.slice(0, 10).map(l => `
+    <div class="log-entry">
+      <div class="log-entry-date">${l.date}${l.videoRecorded ? ' · 📹 Video recorded' : ''}</div>
+      ${l.notice ? `<div class="log-entry-content"><strong>Noticed:</strong> ${esc(l.notice)}</div>` : ''}
+      ${l.body ? `<div class="log-entry-content mt-8"><strong>Body:</strong> ${esc(l.body)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// FEELINGS WHEEL
+// ══════════════════════════════════════════════════════
+function renderFeelings() {
+  const coreEl = document.getElementById('coreEmotions');
+  coreEl.innerHTML = Object.entries(FEELINGS).map(([name, data]) => `
+    <div class="core-btn ${selectedCore[name] ? 'selected' : ''}"
+         style="color:${data.color}"
+         onclick="toggleCore('${name}')">
+      ${name}
+    </div>
+  `).join('');
+  renderSubEmotions();
+}
+
+function toggleCore(name) {
+  selectedCore[name] = !selectedCore[name];
+  if (!selectedCore[name]) {
+    delete selectedSubs[name];
+  }
+  renderFeelings();
+  updateSelectedSummary();
+}
+
+function renderSubEmotions() {
+  const el = document.getElementById('subEmotions');
+  const active = Object.keys(selectedCore).filter(k => selectedCore[k]);
+  if (!active.length) { el.innerHTML = ''; return; }
+  el.innerHTML = active.map(name => {
+    const data = FEELINGS[name];
+    return `
+      <div class="sub-group">
+        <div class="sub-group-title" style="color:${data.color}">${name}</div>
+        <div class="sub-tags">
+          ${data.sub.map(s => `
+            <div class="sub-tag ${(selectedSubs[name]||[]).includes(s) ? 'selected' : ''}"
+                 style="color:${(selectedSubs[name]||[]).includes(s) ? data.color : ''};border-color:${(selectedSubs[name]||[]).includes(s) ? data.color : 'var(--border)'}"
+                 onclick="toggleSub('${name}','${s}')">
+              ${s}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleSub(emotion, sub) {
+  if (!selectedSubs[emotion]) selectedSubs[emotion] = [];
+  const idx = selectedSubs[emotion].indexOf(sub);
+  if (idx >= 0) selectedSubs[emotion].splice(idx, 1);
+  else selectedSubs[emotion].push(sub);
+  renderSubEmotions();
+  updateSelectedSummary();
+}
+
+function toggleWhen(w) {
+  const idx = selectedWhen.indexOf(w);
+  if (idx >= 0) selectedWhen.splice(idx, 1);
+  else selectedWhen.push(w);
+  document.querySelectorAll('.when-tag').forEach(el => el.classList.remove('selected'));
+  selectedWhen.forEach(w => document.getElementById(`when-${w}`)?.classList.add('selected'));
+  updateSelectedSummary();
+}
+
+function updateSelectedSummary() {
+  const el = document.getElementById('selectedSummary');
+  const cores = Object.keys(selectedCore).filter(k => selectedCore[k]);
+  if (!cores.length) { el.textContent = 'No emotions selected yet.'; return; }
+  const parts = cores.map(c => {
+    const subs = (selectedSubs[c] || []);
+    return subs.length ? `${c} (${subs.join(', ')})` : c;
+  });
+  const when = selectedWhen.length ? ` — ${selectedWhen.join(', ').replace(/-/g,' ')}` : '';
+  el.textContent = parts.join('; ') + when;
+}
+
+function saveFeelingLog() {
+  const cores = Object.keys(selectedCore).filter(k => selectedCore[k]);
+  if (!cores.length) return;
+  const entry = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    emotions: cores.map(c => ({ core: c, subs: selectedSubs[c] || [] })),
+    when: [...selectedWhen],
+    notes: document.getElementById('feelingNotes').value.trim()
+  };
+  state.feelingsLogs.unshift(entry);
+  saveLocal();
+  // Reset
+  selectedCore = {}; selectedSubs = {}; selectedWhen = [];
+  document.getElementById('feelingNotes').value = '';
+  document.querySelectorAll('.when-tag').forEach(el => el.classList.remove('selected'));
+  renderFeelings();
+  updateSelectedSummary();
+  renderFeelingsLog();
+}
+
+function renderFeelingsLog() {
+  const el = document.getElementById('feelingsLog');
+  if (!state.feelingsLogs.length) { el.innerHTML = '<p class="text-sm text-muted italic">No logs yet.</p>'; return; }
+  el.innerHTML = state.feelingsLogs.slice(0, 20).map(l => `
+    <div class="log-entry">
+      <div class="log-entry-date">${l.date}${l.when.length ? ' · ' + l.when.join(', ').replace(/-/g,' ') : ''}</div>
+      <div class="log-entry-content">${l.emotions.map(e => e.subs.length ? `<strong>${e.core}</strong>: ${e.subs.join(', ')}` : `<strong>${e.core}</strong>`).join(' | ')}</div>
+      ${l.notes ? `<div class="log-entry-content mt-8 text-muted">${esc(l.notes)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// CLOSENESS CIRCLE
+// ══════════════════════════════════════════════════════
+let selectedPeople = [];
+let selectedMovement = '';
+
+const ZONE_RADII = { secret: 44, private: 77, public: 112 };
+const ZONE_POSITIONS = {
+  secret: [
+    [150, 115], [150, 145], [120, 130], [180, 130]
+  ],
+  private: [
+    [90, 110], [210, 110]
+  ],
+  public: [
+    [55, 130], [245, 130], [80, 170], [220, 170]
+  ]
+};
+
+function renderCircle() {
+  const g = document.getElementById('circlePeople');
+  const zones = { secret: [], private: [], public: [] };
+  state.people.forEach(p => zones[p.zone]?.push(p));
+
+  g.innerHTML = '';
+  Object.entries(zones).forEach(([zone, people]) => {
+    const positions = ZONE_POSITIONS[zone];
+    people.forEach((p, i) => {
+      const pos = positions[i % positions.length];
+      const x = pos[0], y = pos[1];
+      const mv = p.movement;
+      const arrow = mv === 'closer' ? '←' : mv === 'away' ? '→' : mv === 'both' ? '↔' : mv === 'stable' ? '—' : '✕';
+      const colors = { secret: '#a78bfa', private: '#60a5fa', public: '#34d399' };
+      g.innerHTML += `
+        <g>
+          <circle cx="${x}" cy="${y}" r="14" fill="${colors[zone]}22" stroke="${colors[zone]}" stroke-width="1.2"/>
+          <text x="${x}" y="${y+1}" text-anchor="middle" dominant-baseline="middle" fill="${colors[zone]}" font-size="7" font-family="DM Sans" font-weight="600">${p.initials}</text>
+          <text x="${x}" y="${y+10}" text-anchor="middle" fill="${colors[zone]}99" font-size="6" font-family="DM Sans">${arrow}</text>
+        </g>
+      `;
+    });
+  });
+}
+
+function renderPeopleList() {
+  const el = document.getElementById('peopleList');
+  const zones = [
+    { key: 'secret', label: 'SECRET', cls: 'zone-secret' },
+    { key: 'private', label: 'PRIVATE', cls: 'zone-private' },
+    { key: 'public', label: 'PUBLIC', cls: 'zone-public' },
+  ];
+  el.innerHTML = zones.map(z => {
+    const people = state.people.filter(p => p.zone === z.key);
+    const mvSymbol = { closer: '←', away: '→', both: '↔', stable: '—', exited: '✕' };
+    return `
+      <div style="margin-bottom:10px">
+        <span class="zone-label ${z.cls}">${z.label}</span>
+        ${people.map(p => `<span style="font-size:0.82rem;color:var(--text-muted);margin-right:10px">${p.name} <span style="color:var(--accent)">${mvSymbol[p.movement]||''}</span></span>`).join('')}
+      </div>
+    `;
+  }).join('');
+
+  // Person selector for log
+  const sel = document.getElementById('personSelector');
+  sel.innerHTML = state.people.map(p => `
+    <span class="person-chip ${selectedPeople.includes(p.initials) ? 'selected' : ''}"
+          onclick="togglePerson('${p.initials}')">
+      ${p.initials} <span style="color:var(--text-muted);font-weight:300">${p.name}</span>
+    </span>
+  `).join('');
+}
+
+function togglePerson(initials) {
+  const idx = selectedPeople.indexOf(initials);
+  if (idx >= 0) selectedPeople.splice(idx, 1);
+  else selectedPeople.push(initials);
+  renderPeopleList();
+}
+
+function selectMovement(mv) {
+  selectedMovement = mv;
+  document.querySelectorAll('.movement-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById(`mv-${mv}`)?.classList.add('selected');
+}
+
+function saveCircleLog() {
+  const notes = document.getElementById('circleNotes').value.trim();
+  if (!notes && !selectedPeople.length) return;
+  state.circleLogs.unshift({
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}),
+    people: [...selectedPeople],
+    movement: selectedMovement,
+    notes
+  });
+  saveLocal();
+  selectedPeople = [];
+  selectedMovement = '';
+  document.getElementById('circleNotes').value = '';
+  document.querySelectorAll('.movement-btn').forEach(b => b.classList.remove('selected'));
+  renderPeopleList();
+  renderCircleLog();
+}
+
+function renderCircleLog() {
+  const el = document.getElementById('circleLog');
+  if (!state.circleLogs.length) { el.innerHTML = '<p class="text-sm text-muted italic">No reflections yet.</p>'; return; }
+  const mvSymbol = { closer: '← closer', away: '→ away', both: '↔ both', stable: '— stable', exited: '✕ exited' };
+  el.innerHTML = state.circleLogs.slice(0, 15).map(l => `
+    <div class="log-entry" style="border-left-color:var(--accent5)">
+      <div class="log-entry-date">${l.date}${l.people.length ? ' · ' + l.people.join(', ') : ''}${l.movement ? ' · ' + (mvSymbol[l.movement]||l.movement) : ''}</div>
+      ${l.notes ? `<div class="log-entry-content">${esc(l.notes)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// ABC
+// ══════════════════════════════════════════════════════
+function saveABC() {
+  const fields = ['A','B','C','D','E'];
+  const entry = {};
+  fields.forEach(f => entry[f] = document.getElementById(`abc-${f}`).value.trim());
+  if (!entry.A && !entry.B) return;
+  entry.id = Date.now();
+  entry.date = new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+  state.abcEntries.unshift(entry);
+  saveLocal();
+  fields.forEach(f => { document.getElementById(`abc-${f}`).value = ''; });
+  renderABCLog();
+}
+
+function renderABCLog() {
+  const el = document.getElementById('abcLog');
+  if (!state.abcEntries.length) { el.innerHTML = '<p class="text-sm text-muted italic">No entries yet.</p>'; return; }
+  const labels = { A: 'Event', B: 'Belief', C: 'Consequence', D: 'Disputation', E: 'New Belief' };
+  el.innerHTML = state.abcEntries.slice(0, 10).map(e => `
+    <div class="log-entry" style="border-left-color:var(--accent4)">
+      <div class="log-entry-date">${e.date}</div>
+      ${['A','B','C','D','E'].filter(k => e[k]).map(k => `
+        <div class="log-entry-content" style="margin-top:4px"><span style="color:var(--accent4);font-weight:700">${k}</span> <span style="color:var(--text-muted);font-size:0.75rem">(${labels[k]})</span> ${esc(e[k])}</div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// GRIEF & REGULATION
+// ══════════════════════════════════════════════════════
+const TECHNIQUES = [
+  {
+    id: 'name-it',
+    icon: '🏷',
+    name: 'Name It to Tame It',
+    content: `<strong>Label the emotion to reduce its intensity.</strong><br><br>
+When you feel overwhelmed, pause and ask: <em>What is this feeling?</em> Name it specifically — not just "bad" but "ashamed" or "terrified" or "abandoned." Research shows that affect labeling reduces activity in the amygdala and activates the prefrontal cortex.<br><br>
+Try: <em>"Right now I am feeling ____, and that is okay. I can feel this without being destroyed by it."</em>`
+  },
+  {
+    id: 'body-scan',
+    icon: '🧘',
+    name: 'Body Scan',
+    content: `<strong>Start at the top of your head. Move slowly downward.</strong><br><br>
+Notice — without judgment — where you are holding tension. Jaw. Shoulders. Chest. Stomach. Hands. Just notice. Breathe into each area. You are not trying to fix anything. You are witnessing.<br><br>
+Give yourself 3–5 minutes. If a feeling arises, let it. If you need to stop, stop. The body keeps the score. You are learning to read it.`
+  },
+  {
+    id: 'witness',
+    icon: '👁',
+    name: 'Witness Yourself',
+    content: `<strong>Step back and observe without judgment.</strong><br><br>
+Imagine you are watching yourself on a screen — with warmth and without criticism. You see someone who has been through a lot. Someone who is trying. What would you say to that person?<br><br>
+The witness voice is not your inner critic. It is the part of you that has always watched, always known, always been there beneath the noise. Let it speak.`
+  },
+  {
+    id: '90-second',
+    icon: '⏳',
+    name: '90-Second Rule',
+    content: `<strong>A physiological emotion lasts only 90 seconds.</strong><br><br>
+Dr. Jill Bolte Taylor: when an emotion is triggered, the chemical reaction in your body lasts about 90 seconds. What keeps it going is your thoughts looping back to the trigger.<br><br>
+When a wave comes: <em>set a timer for 90 seconds.</em> Breathe. Let the wave move through without feeding it a story. After 90 seconds, ask: am I still experiencing the original surge, or am I re-triggering myself?`
+  },
+  {
+    id: 'letter',
+    icon: '✉️',
+    name: 'Letter to Grief',
+    content: `<strong>Write directly to your grief as if it is a presence.</strong><br><br>
+Begin: <em>"Dear Grief..."</em><br><br>
+Tell it what you need from it. Ask it what it needs from you. Tell it what you're tired of. Tell it what you're not ready to let go of. You are not performing — you are in private conversation with something that lives inside you and deserves to be heard.<br><br>
+Use the journal below. There are no right words.`
+  },
+  {
+    id: 'tipp',
+    icon: '🌊',
+    name: 'TIPP Skill',
+    content: `<strong>Temperature · Intense exercise · Paced breathing · Progressive relaxation</strong><br><br>
+<strong>T — Temperature:</strong> Cold water on your face or wrists. Activates the dive reflex and slows your heart.<br>
+<strong>I — Intense exercise:</strong> 20–30 seconds of fast movement (jumping jacks, sprinting). Burns off adrenaline.<br>
+<strong>P — Paced breathing:</strong> Inhale 4 counts. Hold 1. Exhale 6–8 counts. Longer exhale activates the parasympathetic system.<br>
+<strong>P — Progressive relaxation:</strong> Tense each muscle group for 5 seconds, then release. Work from feet to face.`
+  }
+];
+
+let activeTechnique = null;
+
+function renderTechniques() {
+  const grid = document.getElementById('techniqueGrid');
+  grid.innerHTML = TECHNIQUES.map(t => `
+    <div class="technique-card ${activeTechnique === t.id ? 'active' : ''}" onclick="showTechnique('${t.id}')">
+      <div class="technique-icon">${t.icon}</div>
+      <div class="technique-name">${t.name}</div>
+    </div>
+  `).join('');
+
+  const content = document.getElementById('techniqueContent');
+  if (activeTechnique) {
+    const t = TECHNIQUES.find(t => t.id === activeTechnique);
+    content.innerHTML = `<strong style="color:var(--text);display:block;margin-bottom:10px">${t.icon} ${t.name}</strong>${t.content}`;
+    content.style.display = '';
+  } else {
+    content.style.display = 'none';
+  }
+}
+
+function showTechnique(id) {
+  activeTechnique = activeTechnique === id ? null : id;
+  renderTechniques();
+}
+
+function saveGriefEntry() {
+  const text = document.getElementById('griefJournal').value.trim();
+  if (!text) return;
+  state.griefEntries.unshift({
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    text
+  });
+  document.getElementById('griefJournal').value = '';
+  saveLocal();
+  renderGriefLog();
+}
+
+function renderGriefLog() {
+  const el = document.getElementById('griefLog');
+  if (!state.griefEntries.length) { el.innerHTML = '<p class="text-sm text-muted italic">No entries yet.</p>'; return; }
+  el.innerHTML = state.griefEntries.slice(0, 15).map(e => `
+    <div class="log-entry" style="border-left-color:var(--accent3)">
+      <div class="log-entry-date">${e.date}</div>
+      <div class="log-entry-content">${esc(e.text)}</div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// RITUALS
+// ══════════════════════════════════════════════════════
+function renderRituals() {
+  const el = document.getElementById('ritualsList');
+  el.innerHTML = state.rituals.map(r => `
+    <div class="ritual-item">
+      <div class="ritual-check ${r.done ? 'done' : ''}" onclick="toggleRitual(${r.id})">${r.done ? '✓' : ''}</div>
+      <div class="ritual-label">
+        ${r.url ? `<a href="${r.url}" target="_blank">${esc(r.label)}</a>` : esc(r.label)}
+      </div>
+      ${r.id > 6 ? `<span class="ritual-delete" onclick="deleteRitual(${r.id})">✕</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function toggleRitual(id) {
+  const r = state.rituals.find(r => r.id === id);
+  if (r) { r.done = !r.done; saveLocal(); renderRituals(); }
+}
+
+function deleteRitual(id) {
+  state.rituals = state.rituals.filter(r => r.id !== id);
+  saveLocal();
+  renderRituals();
+}
+
+function addRitual() {
+  const input = document.getElementById('newRitualInput');
+  const label = input.value.trim();
+  if (!label) return;
+  state.rituals.push({ id: Date.now(), label, done: false });
+  input.value = '';
+  saveLocal();
+  renderRituals();
+}
+
+function resetRituals() {
+  state.rituals.forEach(r => r.done = false);
+  saveLocal();
+  renderRituals();
+}
+
+function saveSchedule() {
+  state.schedule.day = document.getElementById('scheduleDay').value;
+  state.schedule.intention = document.getElementById('weekIntention').value;
+  saveLocal();
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const el = document.getElementById('scheduleDisplay');
+  if (state.schedule.day) {
+    el.innerHTML = `<strong>${esc(state.schedule.day)}</strong>${state.schedule.intention ? `<br>${esc(state.schedule.intention)}` : ''}`;
+  }
+  document.getElementById('scheduleDay').value = state.schedule.day || '';
+  document.getElementById('weekIntention').value = state.schedule.intention || '';
+}
+
+// ══════════════════════════════════════════════════════
+// SESSIONS
+// ══════════════════════════════════════════════════════
+function renderSessions() {
+  const el = document.getElementById('sessionsList');
+  const statusColors = { completed: 'var(--accent3)', missed: 'var(--danger)', upcoming: 'var(--text-dim)' };
+  const statusLabels = { completed: 'Completed', missed: 'Missed', upcoming: 'Upcoming' };
+  el.innerHTML = state.sessions.map(s => `
+    <div class="session-card ${s.status}" onclick="editSession(${s.id})">
+      <div class="session-header">
+        <div class="session-num">Session ${s.num}</div>
+        <span class="badge" style="background:${statusColors[s.status]}22;color:${statusColors[s.status]}">${statusLabels[s.status]}</span>
+      </div>
+      ${s.date ? `<div class="text-xs text-muted">${s.date}</div>` : ''}
+      ${s.status === 'missed' && s.missedReason ? `<div class="text-xs" style="color:var(--danger);margin-top:4px">⚠ ${esc(s.missedReason)}</div>` : ''}
+      ${s.notes ? `<div class="session-notes">${esc(s.notes)}</div>` : '<div class="session-notes text-muted italic">Tap to add notes</div>'}
+    </div>
+  `).join('');
+
+  // Home reminder
+  const remaining = state.sessions.filter(s => s.status === 'upcoming').length;
+  const remCard = document.getElementById('sessionReminderCard');
+  const remText = document.getElementById('sessionsRemaining');
+  if (remaining > 0) {
+    remCard.style.display = '';
+    remText.textContent = `${remaining} session${remaining !== 1 ? 's' : ''} remaining with your therapist`;
+  } else {
+    remCard.style.display = 'none';
+  }
+}
+
+function editSession(id) {
+  const s = state.sessions.find(s => s.id === id);
+  currentSessionEdit = id;
+  document.getElementById('sessionModalTitle').textContent = `Session ${s.num}`;
+  document.getElementById('sessionDate').value = s.date || '';
+  document.getElementById('sessionStatus').value = s.status || 'upcoming';
+  document.getElementById('sessionMissedReason').value = s.missedReason || '';
+  document.getElementById('sessionNotes').value = s.notes || '';
+  openModal('sessionModal');
+}
+
+function saveSession() {
+  const s = state.sessions.find(s => s.id === currentSessionEdit);
+  if (!s) return;
+  s.date = document.getElementById('sessionDate').value;
+  s.status = document.getElementById('sessionStatus').value;
+  s.missedReason = document.getElementById('sessionMissedReason').value;
+  s.notes = document.getElementById('sessionNotes').value;
+  saveLocal();
+  renderSessions();
+  closeModal('sessionModal');
+}
+
+function addSession() {
+  const maxNum = Math.max(...state.sessions.map(s => s.num));
+  state.sessions.push({
+    id: Date.now(), num: maxNum + 1,
+    date: '', status: 'upcoming', missedReason: '', notes: ''
+  });
+  saveLocal();
+  renderSessions();
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════
+const EXPORT_OPTIONS = [
+  { id: 'sessions', label: 'Session notes (all 5)' },
+  { id: 'feelings', label: 'Feelings logs' },
+  { id: 'circle', label: 'Closeness circle reflections' },
+  { id: 'abc', label: 'ABC worksheet entries' },
+  { id: 'grief', label: 'Grief journal entries' },
+  { id: 'timer', label: 'Session timer notes' },
+];
+
+let selectedExports = new Set(['sessions', 'feelings', 'circle', 'abc']);
+
+function openExport() {
+  renderExportOptions();
+  document.getElementById('exportOutput').style.display = 'none';
+  openModal('exportModal');
+}
+
+function renderExportOptions() {
+  const el = document.getElementById('exportOptions');
+  el.innerHTML = EXPORT_OPTIONS.map(o => `
+    <div class="export-option">
+      <div class="export-check ${selectedExports.has(o.id) ? 'checked' : ''}" onclick="toggleExport('${o.id}')" id="ec-${o.id}">
+        ${selectedExports.has(o.id) ? '✓' : ''}
+      </div>
+      <div class="export-label">${o.label}</div>
+    </div>
+  `).join('');
+}
+
+function toggleExport(id) {
+  if (selectedExports.has(id)) selectedExports.delete(id);
+  else selectedExports.add(id);
+  renderExportOptions();
+}
+
+function generateExport() {
+  const d = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let out = `INNER WORK EXPORT\nGenerated: ${d}\n${'═'.repeat(50)}\n\n`;
+
+  if (selectedExports.has('sessions')) {
+    out += `SESSIONS\n${'─'.repeat(30)}\n`;
+    state.sessions.forEach(s => {
+      out += `Session ${s.num} [${s.status.toUpperCase()}]${s.date ? ` — ${s.date}` : ''}\n`;
+      if (s.status === 'missed' && s.missedReason) out += `  Missed: ${s.missedReason}\n`;
+      if (s.notes) out += `  Notes: ${s.notes}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('feelings') && state.feelingsLogs.length) {
+    out += `FEELINGS LOG (${state.feelingsLogs.length} entries)\n${'─'.repeat(30)}\n`;
+    state.feelingsLogs.forEach(l => {
+      out += `${l.date}${l.when.length ? ' ['+l.when.join(', ').replace(/-/g,' ')+']' : ''}\n`;
+      l.emotions.forEach(e => {
+        out += `  ${e.core}${e.subs.length ? ': '+e.subs.join(', ') : ''}\n`;
+      });
+      if (l.notes) out += `  Notes: ${l.notes}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('circle') && state.circleLogs.length) {
+    out += `CLOSENESS CIRCLE REFLECTIONS\n${'─'.repeat(30)}\n`;
+    const mvSymbol = { closer: '← closer', away: '→ away', both: '↔ both', stable: '— stable', exited: '✕ exited' };
+    state.circleLogs.forEach(l => {
+      out += `${l.date}`;
+      if (l.people.length) out += ` [${l.people.join(', ')}]`;
+      if (l.movement) out += ` — ${mvSymbol[l.movement]||l.movement}`;
+      out += '\n';
+      if (l.notes) out += `  ${l.notes}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('abc') && state.abcEntries.length) {
+    out += `ABC WORKSHEET ENTRIES\n${'─'.repeat(30)}\n`;
+    const labels = { A: 'Event', B: 'Belief', C: 'Consequence', D: 'Disputation', E: 'New Belief' };
+    state.abcEntries.forEach(e => {
+      out += `${e.date}\n`;
+      ['A','B','C','D','E'].forEach(k => { if (e[k]) out += `  ${k} (${labels[k]}): ${e[k]}\n`; });
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('grief') && state.griefEntries.length) {
+    out += `GRIEF JOURNAL (${state.griefEntries.length} entries)\n${'─'.repeat(30)}\n`;
+    state.griefEntries.forEach(e => {
+      out += `${e.date}\n${e.text}\n\n`;
+    });
+  }
+
+  if (selectedExports.has('timer') && state.timerLogs.length) {
+    out += `SESSION TIMER NOTES\n${'─'.repeat(30)}\n`;
+    state.timerLogs.forEach(l => {
+      out += `${l.date}${l.videoRecorded ? ' [video]' : ''}\n`;
+      if (l.notice) out += `  Noticed: ${l.notice}\n`;
+      if (l.body) out += `  Body: ${l.body}\n`;
+      out += '\n';
+    });
+  }
+
+  document.getElementById('exportText').textContent = out;
+  document.getElementById('exportOutput').style.display = '';
+}
+
+function copyExport() {
+  const text = document.getElementById('exportText').textContent;
+  navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!')).catch(() => {
+    // Fallback
+    const el = document.getElementById('exportText');
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    alert('Copied!');
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function openSettings() { openModal('settingsModal'); }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function clearAllData() {
+  if (!confirm('Clear ALL local data? This cannot be undone.')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function initApp() {
+  // Home date
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('homeGreeting').textContent = greeting;
+  document.getElementById('homeDate').textContent = now.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  // Render all
+  renderTimerLogs();
+  renderFeelings();
+  renderFeelingsLog();
+  renderCircle();
+  renderPeopleList();
+  renderCircleLog();
+  renderABCLog();
+  renderTechniques();
+  renderGriefLog();
+  renderRituals();
+  renderSchedule();
+  renderSessions();
+  updateTimerDisplay();
+
+  // Try restore Drive token
+  const savedToken = localStorage.getItem('innerwork_drive_token');
+  if (savedToken) {
+    driveAccessToken = savedToken;
+    updateDriveUI(true);
+    loadFromDrive();
+  }
+}
+
+// Load on start
+loadLocal();
+</script>
+</body>
+</html>
