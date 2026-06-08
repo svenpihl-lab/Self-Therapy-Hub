@@ -2339,4 +2339,28 @@ function initApp() {
   renderFeelingsLog();
   renderCircle();
   renderPeopleList();
-  renderCircl
+  renderCircleLog();
+  renderABCLog();
+  renderTechniques();
+  renderGriefLog();
+  renderRituals();
+  renderSchedule();
+  renderSessions();
+  renderReadingLog();
+  updateTimerDisplay();
+
+  // Try restore Drive token
+  const savedToken = localStorage.getItem('innerwork_drive_token');
+  if (savedToken) {
+    driveAccessToken = savedToken;
+    updateDriveUI(true);
+    loadFromDrive();
+  }
+}
+
+// Load on start
+loadLocal();
+</script>
+
+
+</body></html>
