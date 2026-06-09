@@ -2324,4 +2324,328 @@ function renderSessions() {
       </div>
       ${s.date ? `<div class="text-xs text-muted">${s.date}</div>` : ''}
       ${s.status === 'missed' && s.missedReason ? `<div class="text-xs" style="color:var(--danger);margin-top:4px">⚠ ${esc(s.missedReason)}</div>` : ''}
-      ${s.notes ? `<div class="session-notes">${esc(s.notes)}</div>` : '<div class="session-notes text-muted italic">Tap to add no
+      ${s.notes ? `<div class="session-notes">${esc(s.notes)}</div>` : '<div class="session-notes text-muted italic">Tap to add notes</div>'}
+    </div>
+  `).join('');
+
+  // Home reminder
+  const remaining = state.sessions.filter(s => s.status === 'upcoming').length;
+  const remCard = document.getElementById('sessionReminderCard');
+  const remText = document.getElementById('sessionsRemaining');
+  if (remaining > 0) {
+    remCard.style.display = '';
+    remText.textContent = `${remaining} session${remaining !== 1 ? 's' : ''} remaining with your therapist`;
+  } else {
+    remCard.style.display = 'none';
+  }
+}
+
+function editSession(id) {
+  const s = state.sessions.find(s => s.id === id);
+  currentSessionEdit = id;
+  document.getElementById('sessionModalTitle').textContent = `Session ${s.num}`;
+  document.getElementById('sessionDate').value = s.date || '';
+  document.getElementById('sessionStatus').value = s.status || 'upcoming';
+  document.getElementById('sessionMissedReason').value = s.missedReason || '';
+  document.getElementById('sessionNotes').value = s.notes || '';
+  openModal('sessionModal');
+}
+
+function saveSession() {
+  const s = state.sessions.find(s => s.id === currentSessionEdit);
+  if (!s) return;
+  s.date = document.getElementById('sessionDate').value;
+  s.status = document.getElementById('sessionStatus').value;
+  s.missedReason = document.getElementById('sessionMissedReason').value;
+  s.notes = document.getElementById('sessionNotes').value;
+  saveLocal();
+  renderSessions();
+  closeModal('sessionModal');
+}
+
+function addSession() {
+  const maxNum = Math.max(...state.sessions.map(s => s.num));
+  state.sessions.push({
+    id: Date.now(), num: maxNum + 1,
+    date: '', status: 'upcoming', missedReason: '', notes: ''
+  });
+  saveLocal();
+  renderSessions();
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════
+const EXPORT_OPTIONS = [
+  { id: 'braindump', label: 'Brain dumps & reflections' },
+  { id: 'reading', label: 'Reading log (ACA, Elephant Journal, etc)' },
+  { id: 'sessions', label: 'Session notes (all 5)' },
+  { id: 'feelings', label: 'Feelings logs' },
+  { id: 'circle', label: 'Closeness circle reflections' },
+  { id: 'abc', label: 'ABC worksheet entries' },
+  { id: 'grief', label: 'Grief journal entries' },
+  { id: 'timer', label: 'Session timer notes' },
+];
+
+let selectedExports = new Set(['sessions', 'feelings', 'circle', 'abc']);
+
+function openExport() {
+  renderExportOptions();
+  document.getElementById('exportOutput').style.display = 'none';
+  openModal('exportModal');
+}
+
+function renderExportOptions() {
+  const el = document.getElementById('exportOptions');
+  el.innerHTML = EXPORT_OPTIONS.map(o => `
+    <div class="export-option">
+      <div class="export-check ${selectedExports.has(o.id) ? 'checked' : ''}" onclick="toggleExport('${o.id}')" id="ec-${o.id}">
+        ${selectedExports.has(o.id) ? '✓' : ''}
+      </div>
+      <div class="export-label">${o.label}</div>
+    </div>
+  `).join('');
+}
+
+function toggleExport(id) {
+  if (selectedExports.has(id)) selectedExports.delete(id);
+  else selectedExports.add(id);
+  renderExportOptions();
+}
+
+function generateExport() {
+  const d = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let out = `INNER WORK EXPORT\nGenerated: ${d}\n${'═'.repeat(50)}\n\n`;
+
+  if (selectedExports.has('braindump') && (state.brainDumps||[]).length) {
+    out += `BRAIN DUMPS (${state.brainDumps.length} entries)\n${'─'.repeat(30)}\n`;
+    state.brainDumps.forEach(d => {
+      out += `${d.date}\nDump: ${d.dump}\n`;
+      if (d.reflection) out += `Reflection: ${d.reflection}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('reading') && state.readingEntries.length) {
+    out += `READING LOG (${state.readingEntries.length} entries)\n${'─'.repeat(30)}\n`;
+    state.readingEntries.forEach(e => {
+      out += `${e.date} [${e.source}]${e.title ? ' — ' + e.title : ''}\n`;
+      if (e.passage) out += `  "${e.passage}"\n`;
+      if (e.reflection) out += `  Reflection: ${e.reflection}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('sessions')) {
+    out += `SESSIONS\n${'─'.repeat(30)}\n`;
+    state.sessions.forEach(s => {
+      out += `Session ${s.num} [${s.status.toUpperCase()}]${s.date ? ` — ${s.date}` : ''}\n`;
+      if (s.status === 'missed' && s.missedReason) out += `  Missed: ${s.missedReason}\n`;
+      if (s.notes) out += `  Notes: ${s.notes}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('feelings') && state.feelingsLogs.length) {
+    out += `FEELINGS LOG (${state.feelingsLogs.length} entries)\n${'─'.repeat(30)}\n`;
+    state.feelingsLogs.forEach(l => {
+      out += `${l.date}${l.when.length ? ' ['+l.when.join(', ').replace(/-/g,' ')+']' : ''}\n`;
+      l.emotions.forEach(e => {
+        out += `  ${e.core}${e.subs.length ? ': '+e.subs.join(', ') : ''}\n`;
+      });
+      if (l.notes) out += `  Notes: ${l.notes}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('circle') && state.circleLogs.length) {
+    out += `CLOSENESS CIRCLE REFLECTIONS\n${'─'.repeat(30)}\n`;
+    const mvSymbol = { closer: '← closer', away: '→ away', both: '↔ both', stable: '— stable', exited: '✕ exited' };
+    state.circleLogs.forEach(l => {
+      out += `${l.date}`;
+      if (l.people.length) out += ` [${l.people.join(', ')}]`;
+      if (l.movement) out += ` — ${mvSymbol[l.movement]||l.movement}`;
+      out += '\n';
+      if (l.notes) out += `  ${l.notes}\n`;
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('abc') && state.abcEntries.length) {
+    out += `ABC WORKSHEET ENTRIES\n${'─'.repeat(30)}\n`;
+    const labels = { A: 'Event', B: 'Belief', C: 'Consequence', D: 'Disputation', E: 'New Belief' };
+    state.abcEntries.forEach(e => {
+      out += `${e.date}\n`;
+      ['A','B','C','D','E'].forEach(k => { if (e[k]) out += `  ${k} (${labels[k]}): ${e[k]}\n`; });
+      out += '\n';
+    });
+  }
+
+  if (selectedExports.has('grief') && state.griefEntries.length) {
+    out += `GRIEF JOURNAL (${state.griefEntries.length} entries)\n${'─'.repeat(30)}\n`;
+    state.griefEntries.forEach(e => {
+      out += `${e.date}\n${e.text}\n\n`;
+    });
+  }
+
+  if (selectedExports.has('timer') && state.timerLogs.length) {
+    out += `SESSION TIMER NOTES\n${'─'.repeat(30)}\n`;
+    state.timerLogs.forEach(l => {
+      out += `${l.date}${l.videoRecorded ? ' [video]' : ''}\n`;
+      if (l.notice) out += `  Noticed: ${l.notice}\n`;
+      if (l.body) out += `  Body: ${l.body}\n`;
+      out += '\n';
+    });
+  }
+
+  document.getElementById('exportText').textContent = out;
+  document.getElementById('exportOutput').style.display = '';
+}
+
+function copyExport() {
+  const text = document.getElementById('exportText').textContent;
+  navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!')).catch(() => {
+    // Fallback
+    const el = document.getElementById('exportText');
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    alert('Copied!');
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function openSettings() { openModal('settingsModal'); }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function clearAllData() {
+  if (!confirm('Clear ALL local data? This cannot be undone.')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════
+// READING LOG
+// ══════════════════════════════════════════════════════
+let currentReadingSource = 'ACA';
+let currentReadingFilter = 'all';
+
+function selectReadingSource(source) {
+  currentReadingSource = source;
+  document.querySelectorAll('#readingSourceTags .toggle-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`rs-${source}`)?.classList.add('active');
+}
+
+function filterReading(filter) {
+  currentReadingFilter = filter;
+  document.querySelectorAll('#readingFilterTags .toggle-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`rf-${filter}`)?.classList.add('active');
+  renderReadingLog();
+}
+
+function saveReadingEntry() {
+  const url = document.getElementById('readingURL').value.trim();
+  const title = document.getElementById('readingTitle').value.trim();
+  const passage = document.getElementById('readingPassage').value.trim();
+  const reflection = document.getElementById('readingReflection').value.trim();
+  if (!passage && !reflection) return;
+  state.readingEntries.unshift({
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}),
+    source: currentReadingSource,
+    url, title, passage, reflection
+  });
+  document.getElementById('readingURL').value = '';
+  document.getElementById('readingTitle').value = '';
+  document.getElementById('readingPassage').value = '';
+  document.getElementById('readingReflection').value = '';
+  saveLocal();
+  renderReadingLog();
+}
+
+function renderReadingLog() {
+  const el = document.getElementById('readingLog');
+  if (!el) return;
+  const entries = currentReadingFilter === 'all'
+    ? state.readingEntries
+    : state.readingEntries.filter(e => e.source === currentReadingFilter);
+  if (!entries.length) { el.innerHTML = '<p class="text-sm text-muted italic">No entries yet.</p>'; return; }
+  const sourceColors = { 'ACA': 'var(--accent)', 'Elephant Journal': 'var(--accent3)', 'Good Men Project': 'var(--accent5)', 'Other': 'var(--accent4)' };
+  el.innerHTML = entries.slice(0, 20).map(e => `
+    <div class="log-entry" style="border-left-color:${sourceColors[e.source]||'var(--accent)'}">
+      <div class="log-entry-date">${e.date} · <span style="color:${sourceColors[e.source]||'var(--accent)'};font-weight:600">${e.source}</span>${e.title ? ' · ' + esc(e.title) : ''}${e.url ? ` · <a href="${e.url}" target="_blank" style="color:var(--accent5)">Open article</a>` : ''}</div>
+      ${e.passage ? `<div class="log-entry-content mt-8" style="font-style:italic;color:var(--text-muted)">"${esc(e.passage)}"</div>` : ''}
+      ${e.reflection ? `<div class="log-entry-content mt-8">${esc(e.reflection)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function initApp() {
+  // Home date
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('homeGreeting').textContent = greeting;
+  document.getElementById('homeDate').textContent = now.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  // Render all
+  renderTimerLogs();
+  renderFeelings();
+  renderFeelingsLog();
+  renderCircle();
+  renderPeopleList();
+  renderCircleLog();
+  renderABCLog();
+  renderTechniques();
+  renderGriefLog();
+  renderRituals();
+  renderSchedule();
+  renderSessions();
+  renderReadingLog();
+  renderBDLog();
+  updateTimerDisplay();
+
+  // Try restore Drive token
+  const savedToken = localStorage.getItem('innerwork_drive_token');
+  if (savedToken) {
+    driveAccessToken = savedToken;
+    updateDriveUI(true);
+    loadFromDrive();
+  }
+}
+
+// Load on start
+loadLocal();
+</script>
+
+
+</body></html>
