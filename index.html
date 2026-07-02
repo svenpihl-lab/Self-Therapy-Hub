@@ -869,7 +869,6 @@ html, body {
           <textarea class="textarea" id="feelingNotes" placeholder="What was happening? What triggered this?"></textarea>
         </div>
         <button class="btn btn-primary btn-sm" onclick="saveFeelingLog()">Log Feelings</button>
-        <div id="feelingValidation" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--danger)">Select at least one core emotion above first.</div>
       </div>
 
       <div class="card mt-12">
@@ -1689,13 +1688,7 @@ function updateSelectedSummary() {
 
 function saveFeelingLog() {
   const cores = Object.keys(selectedCore).filter(k => selectedCore[k]);
-  const validation = document.getElementById('feelingValidation');
-  if (!cores.length) {
-    validation.style.display = '';
-    setTimeout(() => { validation.style.display = 'none'; }, 3000);
-    return;
-  }
-  validation.style.display = 'none';
+  if (!cores.length) return;
   const entry = {
     id: Date.now(),
     date: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}),
@@ -1719,8 +1712,8 @@ function renderFeelingsLog() {
   if (!state.feelingsLogs.length) { el.innerHTML = '<p class="text-sm text-muted italic">No logs yet.</p>'; return; }
   el.innerHTML = state.feelingsLogs.slice(0, 20).map(l => `
     <div class="log-entry">
-      <div class="log-entry-date">${l.date}${l.when.length ? ' · ' + l.when.join(', ').replace(/-/g,' ') : ''}</div>
-      <div class="log-entry-content">${l.emotions.map(e => e.subs.length ? `<strong>${e.core}</strong>: ${e.subs.join(', ')}` : `<strong>${e.core}</strong>`).join(' | ')}</div>
+      <div class="log-entry-date">${l.date}${(l.when||[]).length ? ' · ' + l.when.join(', ').replace(/-/g,' ') : ''}</div>
+      <div class="log-entry-content">${(l.emotions||[]).map(e => (e.subs||[]).length ? `<strong>${e.core}</strong>: ${e.subs.join(', ')}` : `<strong>${e.core}</strong>`).join(' | ')}</div>
       ${l.notes ? `<div class="log-entry-content mt-8 text-muted">${esc(l.notes)}</div>` : ''}
     </div>
   `).join('');
@@ -1836,7 +1829,7 @@ function renderCircleLog() {
   const mvSymbol = { closer: '← closer', away: '→ away', both: '↔ both', stable: '— stable', exited: '✕ exited' };
   el.innerHTML = state.circleLogs.slice(0, 15).map(l => `
     <div class="log-entry" style="border-left-color:var(--accent5)">
-      <div class="log-entry-date">${l.date}${l.people.length ? ' · ' + l.people.join(', ') : ''}${l.movement ? ' · ' + (mvSymbol[l.movement]||l.movement) : ''}</div>
+      <div class="log-entry-date">${l.date}${(l.people||[]).length ? ' · ' + l.people.join(', ') : ''}${l.movement ? ' · ' + (mvSymbol[l.movement]||l.movement) : ''}</div>
       ${l.notes ? `<div class="log-entry-content">${esc(l.notes)}</div>` : ''}
     </div>
   `).join('');
@@ -2142,6 +2135,16 @@ function toggleExport(id) {
 }
 
 function generateExport() {
+  try {
+    generateExportInner();
+  } catch (e) {
+    document.getElementById('exportText').textContent =
+      'Export failed to generate: ' + e.message + '\n\nThis usually means one of your saved entries has an unexpected format. Try unchecking sections one at a time to find which one is causing it, or let Claude know the error above.';
+    document.getElementById('exportOutput').style.display = '';
+  }
+}
+
+function generateExportInner() {
   const d = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   let out = `INNER WORK EXPORT\nGenerated: ${d}\n${'═'.repeat(50)}\n\n`;
 
@@ -2168,9 +2171,9 @@ function generateExport() {
   if (selectedExports.has('feelings') && state.feelingsLogs.length) {
     out += `FEELINGS LOG (${state.feelingsLogs.length} entries)\n${'─'.repeat(30)}\n`;
     state.feelingsLogs.forEach(l => {
-      out += `${l.date}${l.when.length ? ' ['+l.when.join(', ').replace(/-/g,' ')+']' : ''}\n`;
-      l.emotions.forEach(e => {
-        out += `  ${e.core}${e.subs.length ? ': '+e.subs.join(', ') : ''}\n`;
+      out += `${l.date}${(l.when||[]).length ? ' ['+l.when.join(', ').replace(/-/g,' ')+']' : ''}\n`;
+      (l.emotions||[]).forEach(e => {
+        out += `  ${e.core}${(e.subs||[]).length ? ': '+e.subs.join(', ') : ''}\n`;
       });
       if (l.notes) out += `  Notes: ${l.notes}\n`;
       out += '\n';
@@ -2182,7 +2185,7 @@ function generateExport() {
     const mvSymbol = { closer: '← closer', away: '→ away', both: '↔ both', stable: '— stable', exited: '✕ exited' };
     state.circleLogs.forEach(l => {
       out += `${l.date}`;
-      if (l.people.length) out += ` [${l.people.join(', ')}]`;
+      if ((l.people||[]).length) out += ` [${l.people.join(', ')}]`;
       if (l.movement) out += ` — ${mvSymbol[l.movement]||l.movement}`;
       out += '\n';
       if (l.notes) out += `  ${l.notes}\n`;
